@@ -1,0 +1,76 @@
+sources:
+  - state: TX
+    domain: legislation
+    fetcher: legiscan
+    url: https://api.legiscan.com/
+    selector: null
+    active: true
+  - state: VA
+    domain: legislation
+    fetcher: legiscan
+    url: https://api.legiscan.com/
+    selector: null
+    active: true
+  - state: OH
+    domain: legislation
+    fetcher: legiscan
+    url: https://api.legiscan.com/
+    selector: null
+    active: true
+  - state: GA
+    domain: legislation
+    fetcher: legiscan
+    url: https://api.legiscan.com/
+    selector: null
+    active: true
+  - state: AZ
+    domain: legislation
+    fetcher: legiscan
+    url: https://api.legiscan.com/
+    selector: null
+    active: true
+
+  - state: TX
+    domain: tariff
+    fetcher: puc_rss
+    url: null
+    selector: null
+    active: false
+  - state: VA
+    domain: tariff
+    fetcher: puc_rss
+    url: null
+    selector: null
+    active: false
+  - state: OH
+    domain: tariff
+    fetcher: puc_rss
+    url: null
+    selector: null
+    active: false
+  - state: GA
+    domain: tariff
+    fetcher: puc_rss
+    url: null
+    selector: null
+    active: false
+  - state: AZ
+    domain: tariff
+    fetcher: puc_rss
+    url: null
+    selector: null
+    active: false
+
+  - state: null
+    domain: tariff
+    fetcher: eei_pdf
+    url: null
+    selector: null
+    active: false
+
+  - state: null
+    domain: tax_incentive
+    fetcher: delta_db
+    url: null
+    selector: null
+    active: false
