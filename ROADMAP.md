@@ -24,8 +24,8 @@ not LLM extraction. See `CLAUDE.md` for the full spec.
 | 1 | Repo scaffold (uv, package layout, CI/cron workflows) | Done — pushed directly (first commit, no base to PR against) |
 | 2 | `sources.yaml` format + pydantic models, 5-state pilot stubs | Done — PR #1 |
 | 3 | LegiScan client + per-bill change detection, SQLite introduced | Done — PR #2 |
-| 4 | Normalize + hash-gate for HTML sources (PUC RSS) | Next |
-| 5 | `digest.md` renderer v0 (LegiScan lane only) | Not started |
+| 4 | Normalize + hash-gate for HTML sources (PUC RSS) | Done — PR #4 |
+| 5 | `digest.md` renderer v0 (LegiScan lane only) | Next |
 | — | Extraction (LLM) + `records` table | Not started (later phase) |
 | — | `matrix.md` / `matrix.json` render | Not started (later phase) |
 | — | Review queue (human verification CLI) | Not started (later phase) |
@@ -48,6 +48,12 @@ not LLM extraction. See `CLAUDE.md` for the full spec.
   is distinct in SQL) — `sync_sources` uses manual `SELECT ... IS ?` +
   insert-or-update instead of relying on `ON CONFLICT`. Relevant again for
   any future dedup logic on nullable columns.
+- **HTML normalization strips whole elements (script/nav/header/footer)
+  and hashes visible text only**, rather than special-casing individual
+  session-token/attribute names. Timestamps are scrubbed via regex after
+  text extraction. This is deliberately generic so it should hold up for
+  `puc_rss` pages without per-source tuning — revisit if a real PUC page
+  turns out to bury actual content inside a stripped element.
 
 ## Open questions / risks (not yet decisions)
 - **Repo growth from committing raw JSON weekly.** Fine at current
