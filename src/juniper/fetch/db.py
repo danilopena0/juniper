@@ -41,6 +41,11 @@ CREATE TABLE IF NOT EXISTS legiscan_bills (
     url TEXT,
     last_seen_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS digest_runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    rendered_at TEXT NOT NULL
+);
 """
 
 
@@ -100,3 +105,13 @@ def get_source_id(
     if row is None:
         raise LookupError(f"no source found for {state=} {domain=} {fetcher=} {url=}")
     return row[0]
+
+
+def get_last_digest_at(conn: sqlite3.Connection) -> str | None:
+    row = conn.execute("SELECT MAX(rendered_at) FROM digest_runs").fetchone()
+    return row[0] if row else None
+
+
+def record_digest_run(conn: sqlite3.Connection, rendered_at: str) -> None:
+    conn.execute("INSERT INTO digest_runs (rendered_at) VALUES (?)", (rendered_at,))
+    conn.commit()

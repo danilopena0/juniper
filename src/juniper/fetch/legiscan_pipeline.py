@@ -98,7 +98,10 @@ def _process_state(
         )
 
     if changed:
-        diff_summary = ", ".join(sorted(bill.bill_number for bill in changed))
+        entries = sorted(changed, key=lambda bill: bill.bill_number)
+        diff_summary = "; ".join(
+            f"{bill.bill_number}: {bill.title} — {bill.url}" for bill in entries
+        )
         conn.execute(
             """
             INSERT INTO changes
