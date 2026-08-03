@@ -9,9 +9,12 @@ FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 
 def _puc_source_id(conn):
+    # OH's puc_rss source is still unconfigured (url=None, active=False) as of
+    # this writing — used here only as a stand-in source_id for hash-gate
+    # tests, independent of whether it's actually fetchable.
     sources = load_sources(REPO_ROOT / "sources.yaml")
     sync_sources(conn, sources)
-    return get_source_id(conn, state="TX", domain="tariff", fetcher="puc_rss", url=None)
+    return get_source_id(conn, state="OH", domain="tariff", fetcher="puc_rss", url=None)
 
 
 def test_first_fetch_is_always_a_change(tmp_path):
