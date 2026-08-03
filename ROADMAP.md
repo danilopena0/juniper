@@ -19,15 +19,21 @@ not LLM extraction. See `CLAUDE.md` for the full spec.
 
 ## Status
 
+`CLAUDE.md`'s first-session task list (1–5) is complete as of PR #6.
+
 | Task | What | Status |
 |---|---|---|
 | 1 | Repo scaffold (uv, package layout, CI/cron workflows) | Done — pushed directly (first commit, no base to PR against) |
 | 2 | `sources.yaml` format + pydantic models, 5-state pilot stubs | Done — PR #1 |
 | 3 | LegiScan client + per-bill change detection, SQLite introduced | Done — PR #2 |
 | 4 | Normalize + hash-gate for HTML sources (PUC RSS) | Done — PR #4 |
-| 5 | `digest.md` renderer v0 (LegiScan lane only) | Next |
+| 5 | `digest.md` renderer v0 (LegiScan lane only) | Done — PR #6 |
+| — | Manual source inventory (real URLs for `puc_rss`/`eei_pdf`/`delta_db`) | **Blocking next steps — user task, not code** |
+| — | `puc_rss` pipeline wiring (uses Task 4's fetcher/hash-gate) | Not started, blocked on inventory |
+| — | EEI PDF / DELTa DB fetchers | Not started, blocked on inventory |
+| — | Wire pipeline + digest into `weekly.yml` (still lint/test only) | Not started |
 | — | Extraction (LLM) + `records` table | Not started (later phase) |
-| — | `matrix.md` / `matrix.json` render | Not started (later phase) |
+| — | `matrix.md` / `matrix.json` render | Not started (later phase) — the hero asset |
 | — | Review queue (human verification CLI) | Not started (later phase) |
 | — | Distribution (static site, newsletter) | Not started (later phase) |
 
@@ -54,18 +60,28 @@ not LLM extraction. See `CLAUDE.md` for the full spec.
   text extraction. This is deliberately generic so it should hold up for
   `puc_rss` pages without per-source tuning — revisit if a real PUC page
   turns out to bury actual content inside a stripped element.
+- **`digest_runs` is another additive, lane-agnostic table** (same pattern
+  as `legiscan_bills`) so the weekly digest only shows changes since the
+  last render instead of re-showing accumulated history every time.
+- **`legiscan_pipeline`'s `diff_summary` format changed** from a bare
+  comma-joined bill-number list to `"{bill_number}: {title} — {url}"` per
+  bill — the digest needed real content to be useful, and the pipeline
+  already had that data in hand at write time. No compatibility concern
+  since no real weekly runs have happened yet.
 
 ## Open questions / risks (not yet decisions)
 - **Repo growth from committing raw JSON weekly.** Fine at current
   (legislation-only, 5-state) scale. No pruning/retention story yet. Revisit
   once EEI/DELTa PDFs and more lanes are live and there's real run history
   to look at — not urgent now.
-- **Manual source inventory is the actual blocker for 3 of 4 lanes.** Real
-  URLs for `puc_rss`, `eei_pdf`, `delta_db` are still stubbed
-  (`active: false`, `url: null`). Task 4 can build/test hash-gate logic
-  against synthetic fixtures without them, but can't turn those lanes on
-  for real until the inventory (user's manual half-day task, not code)
-  happens.
+- **Manual source inventory is now the critical-path blocker.** All 5
+  first-session tasks are done — the LegiScan lane is fully wired
+  (fetch → detect → digest), and the normalize/hash-gate/fetch primitives
+  for HTML sources exist and are tested. But real URLs for `puc_rss`,
+  `eei_pdf`, `delta_db` are still stubbed (`active: false`, `url: null`),
+  so 3 of 4 pilot lanes can't go live and the digest can only ever show
+  legislation. This is the single highest-leverage next step, and it's a
+  user task (manual inventory), not code.
 - **Verification/review-queue layer isn't scheduled into a numbered task
   yet.** It's the actual moat per the strategy doc, but Tasks 1–5 are all
   lane infrastructure + a v0 digest. Keep this visible so scope doesn't
