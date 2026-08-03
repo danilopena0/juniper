@@ -33,9 +33,9 @@ sources:
   - state: TX
     domain: tariff
     fetcher: puc_rss
-    url: null
+    url: https://puc.texas.gov/agency/resources/pubs/news/
     selector: null
-    active: false
+    active: true
   - state: VA
     domain: tariff
     fetcher: puc_rss

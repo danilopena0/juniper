@@ -28,8 +28,8 @@ not LLM extraction. See `CLAUDE.md` for the full spec.
 | 3 | LegiScan client + per-bill change detection, SQLite introduced | Done — PR #2 |
 | 4 | Normalize + hash-gate for HTML sources (PUC RSS) | Done — PR #4 |
 | 5 | `digest.md` renderer v0 (LegiScan lane only) | Done — PR #6 |
-| — | Manual source inventory (real URLs for `puc_rss`/`eei_pdf`/`delta_db`) | Done for GA/AZ/EEI (research, 2026-08-03); VA/TX/OH/DELTa blocked, see below |
-| — | `puc_rss` pipeline wiring (uses Task 4's fetcher/hash-gate) | Not started — GA & AZ now have real, verified URLs and are `active: true` |
+| — | Manual source inventory (real URLs for `puc_rss`/`eei_pdf`/`delta_db`) | Done for GA/AZ/TX/EEI; VA deliberately skipped, OH/DELTa blocked, see below |
+| — | `puc_rss` pipeline wiring (uses Task 4's fetcher/hash-gate) | Not started — GA, AZ, and TX now have real, verified URLs and are `active: true` |
 | — | EEI PDF fetcher | Not started — URL verified live and public, `active: true` |
 | — | DELTa DB fetcher | Not started, blocked — see open risks |
 | — | Wire pipeline + digest into `weekly.yml` (still lint/test only) | Not started |
@@ -78,18 +78,18 @@ not LLM extraction. See `CLAUDE.md` for the full spec.
 - **Source inventory findings (2026-08-03):** researched and directly
   verified (via `curl` with the project's real User-Agent, not just search)
   all 7 remaining pilot sources:
-  - **GA, AZ (`puc_rss`), EEI (`eei_pdf`) — live and activated** in
-    `sources.yaml`. All three returned 200 with real content and no
-    robots.txt restriction.
+  - **GA, AZ, TX (`puc_rss`), EEI (`eei_pdf`) — live and activated** in
+    `sources.yaml`. All returned 200 with real content and no robots.txt
+    restriction. TX needed a follow-up: `www.puc.texas.gov` fails at the
+    TLS level (server-side cert chain misconfiguration — doesn't send its
+    intermediate cert — not an environment issue), but the bare domain
+    `https://puc.texas.gov` works fine and redirects to the same content;
+    `sources.yaml` now points at the bare-domain URL directly.
   - **VA (`puc_rss`) — deliberately not configured.** `scc.virginia.gov`'s
     robots.txt disallows generic bots (`Disallow: /` catch-all, only a
     named-crawler allowlist permitted). Logged to `sources_skipped.md` per
     the politeness rule rather than worked around. No alternative VA source
     found this pass.
-  - **TX (`puc_rss`) — blocked, needs retry.** `www.puc.texas.gov` fails at
-    the TLS/connection level (cert chain issue) from this environment.
-    Could be transient or environment-specific — worth retrying from a
-    different network before concluding it's unfetchable.
   - **OH (`puc_rss`) — blocked, needs retry.** `puco.ohio.gov` 404s on every
     path tried (news page, home, root), consistent with WAF blocking
     non-browser clients. Needs a human to check the site directly and find
@@ -101,10 +101,10 @@ not LLM extraction. See `CLAUDE.md` for the full spec.
     No hidden JSON/API endpoint found. Options for later: manual periodic
     export instead of automated fetch, or a deeper look at the page's
     network requests to find a non-blocked backing endpoint.
-  - **3 of 4 lanes now have at least one live source** (`legiscan` was
-    already live; `puc_rss` now partially live via GA/AZ; `eei_pdf` live).
-    `delta_db` remains fully blocked — the `tax_incentive` domain has no
-    working source yet.
+  - **`puc_rss` is now live for 3 of 5 pilot states** (GA, AZ, TX); VA is
+    deliberately excluded, OH remains blocked. `legiscan` and `eei_pdf` are
+    fully live. `delta_db` remains fully blocked — the `tax_incentive`
+    domain has no working source yet.
 - **Verification/review-queue layer isn't scheduled into a numbered task
   yet.** It's the actual moat per the strategy doc, but Tasks 1–5 are all
   lane infrastructure + a v0 digest. Keep this visible so scope doesn't
