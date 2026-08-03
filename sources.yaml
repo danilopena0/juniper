@@ -51,22 +51,22 @@ sources:
   - state: GA
     domain: tariff
     fetcher: puc_rss
-    url: null
+    url: https://psc.ga.gov/newsroom/newsreleases/
     selector: null
-    active: false
+    active: true
   - state: AZ
     domain: tariff
     fetcher: puc_rss
-    url: null
+    url: https://azcc.gov/news
     selector: null
-    active: false
+    active: true
 
   - state: null
     domain: tariff
     fetcher: eei_pdf
-    url: null
+    url: "https://www.eei.org/-/media/Project/EEI/Documents/Issues%20and%20Policy/List%20of%20Large%20Customer%20Projects%20and%20Tariffs"
     selector: null
-    active: false
+    active: true
 
   - state: null
     domain: tax_incentive
