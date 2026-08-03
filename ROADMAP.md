@@ -28,9 +28,10 @@ not LLM extraction. See `CLAUDE.md` for the full spec.
 | 3 | LegiScan client + per-bill change detection, SQLite introduced | Done — PR #2 |
 | 4 | Normalize + hash-gate for HTML sources (PUC RSS) | Done — PR #4 |
 | 5 | `digest.md` renderer v0 (LegiScan lane only) | Done — PR #6 |
-| — | Manual source inventory (real URLs for `puc_rss`/`eei_pdf`/`delta_db`) | **Blocking next steps — user task, not code** |
-| — | `puc_rss` pipeline wiring (uses Task 4's fetcher/hash-gate) | Not started, blocked on inventory |
-| — | EEI PDF / DELTa DB fetchers | Not started, blocked on inventory |
+| — | Manual source inventory (real URLs for `puc_rss`/`eei_pdf`/`delta_db`) | Done for GA/AZ/EEI (research, 2026-08-03); VA/TX/OH/DELTa blocked, see below |
+| — | `puc_rss` pipeline wiring (uses Task 4's fetcher/hash-gate) | Not started — GA & AZ now have real, verified URLs and are `active: true` |
+| — | EEI PDF fetcher | Not started — URL verified live and public, `active: true` |
+| — | DELTa DB fetcher | Not started, blocked — see open risks |
 | — | Wire pipeline + digest into `weekly.yml` (still lint/test only) | Not started |
 | — | Extraction (LLM) + `records` table | Not started (later phase) |
 | — | `matrix.md` / `matrix.json` render | Not started (later phase) — the hero asset |
@@ -74,14 +75,36 @@ not LLM extraction. See `CLAUDE.md` for the full spec.
   (legislation-only, 5-state) scale. No pruning/retention story yet. Revisit
   once EEI/DELTa PDFs and more lanes are live and there's real run history
   to look at — not urgent now.
-- **Manual source inventory is now the critical-path blocker.** All 5
-  first-session tasks are done — the LegiScan lane is fully wired
-  (fetch → detect → digest), and the normalize/hash-gate/fetch primitives
-  for HTML sources exist and are tested. But real URLs for `puc_rss`,
-  `eei_pdf`, `delta_db` are still stubbed (`active: false`, `url: null`),
-  so 3 of 4 pilot lanes can't go live and the digest can only ever show
-  legislation. This is the single highest-leverage next step, and it's a
-  user task (manual inventory), not code.
+- **Source inventory findings (2026-08-03):** researched and directly
+  verified (via `curl` with the project's real User-Agent, not just search)
+  all 7 remaining pilot sources:
+  - **GA, AZ (`puc_rss`), EEI (`eei_pdf`) — live and activated** in
+    `sources.yaml`. All three returned 200 with real content and no
+    robots.txt restriction.
+  - **VA (`puc_rss`) — deliberately not configured.** `scc.virginia.gov`'s
+    robots.txt disallows generic bots (`Disallow: /` catch-all, only a
+    named-crawler allowlist permitted). Logged to `sources_skipped.md` per
+    the politeness rule rather than worked around. No alternative VA source
+    found this pass.
+  - **TX (`puc_rss`) — blocked, needs retry.** `www.puc.texas.gov` fails at
+    the TLS/connection level (cert chain issue) from this environment.
+    Could be transient or environment-specific — worth retrying from a
+    different network before concluding it's unfetchable.
+  - **OH (`puc_rss`) — blocked, needs retry.** `puco.ohio.gov` 404s on every
+    path tried (news page, home, root), consistent with WAF blocking
+    non-browser clients. Needs a human to check the site directly and find
+    a working path, if one exists.
+  - **DELTa (`delta_db`) — blocked, needs a different approach.**
+    `sepapower.org/large-load-tariffs-database/` 403s despite robots.txt
+    technically allowing it — looks like Cloudflare-style bot protection
+    that a plain polite `httpx` GET won't get past regardless of User-Agent.
+    No hidden JSON/API endpoint found. Options for later: manual periodic
+    export instead of automated fetch, or a deeper look at the page's
+    network requests to find a non-blocked backing endpoint.
+  - **3 of 4 lanes now have at least one live source** (`legiscan` was
+    already live; `puc_rss` now partially live via GA/AZ; `eei_pdf` live).
+    `delta_db` remains fully blocked — the `tax_incentive` domain has no
+    working source yet.
 - **Verification/review-queue layer isn't scheduled into a numbered task
   yet.** It's the actual moat per the strategy doc, but Tasks 1–5 are all
   lane infrastructure + a v0 digest. Keep this visible so scope doesn't
