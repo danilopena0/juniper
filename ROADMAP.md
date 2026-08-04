@@ -29,7 +29,7 @@ not LLM extraction. See `CLAUDE.md` for the full spec.
 | 4 | Normalize + hash-gate for HTML sources (PUC RSS) | Done — PR #4 |
 | 5 | `digest.md` renderer v0 (LegiScan lane only) | Done — PR #6 |
 | — | Manual source inventory (real URLs for `puc_rss`/`eei_pdf`/`delta_db`) | Done for GA/AZ/TX/EEI; VA/OH deliberately skipped, DELTa blocked, see below |
-| — | `puc_rss` pipeline wiring (uses Task 4's fetcher/hash-gate) | Not started — GA, AZ, and TX now have real, verified URLs and are `active: true` |
+| — | `puc_rss` pipeline wiring (uses Task 4's fetcher/hash-gate) | Done — PR #11. Live for GA/AZ/TX; digest.md now shows both `legiscan` and `puc_rss` lanes, labeled per state |
 | — | EEI PDF fetcher | Not started — URL verified live and public, `active: true` |
 | — | DELTa DB fetcher | Not started, blocked — see open risks |
 | — | Wire pipeline + digest into `weekly.yml` (still lint/test only) | Not started |
@@ -69,6 +69,17 @@ not LLM extraction. See `CLAUDE.md` for the full spec.
   bill — the digest needed real content to be useful, and the pipeline
   already had that data in hand at write time. No compatibility concern
   since no real weekly runs have happened yet.
+- **`hash_gate.check_for_change` gained an optional `url` param** so
+  `puc_rss`'s `diff_summary` can say `"Page content changed — <url>"`
+  instead of the generic `"content changed"` — same reasoning as the
+  `legiscan_pipeline` change above. Default `None` preserves the old
+  behavior for any future lane that doesn't have a natural URL.
+- **`digest.py` renders multiple lanes per state, not just LegiScan.**
+  Generalized to loop over `[("legiscan", "Legislation"), ("puc_rss",
+  "PUC Tariff")]`, with each bullet labeled by lane. Confirmed with the
+  user before doing this, since Task 5 deliberately scoped the digest to
+  LegiScan-only — but leaving a live lane's changes unrendered defeats the
+  point of wiring it.
 
 ## Open questions / risks (not yet decisions)
 - **Repo growth from committing raw JSON weekly.** Fine at current
