@@ -14,33 +14,44 @@ DEFAULT_DB_PATH = Path("data/juniper.db")
 DEFAULT_SOURCES_PATH = Path("sources.yaml")
 DEFAULT_OUTPUT_PATH = Path("digest.md")
 
+LANES = [("legiscan", "Legislation"), ("puc_rss", "PUC Tariff")]
 
-def _state_section(conn: sqlite3.Connection, state: str, since: str | None) -> str:
+
+def _lane_bullets(
+    conn: sqlite3.Connection, state: str, fetcher: str, label: str, since: str | None
+) -> list[str]:
     if since is None:
         rows = conn.execute(
             """
             SELECT c.diff_summary FROM changes c
             JOIN sources s ON s.id = c.source_id
-            WHERE s.state = ? AND s.fetcher = 'legiscan'
+            WHERE s.state = ? AND s.fetcher = ?
             ORDER BY c.detected_at
             """,
-            (state,),
+            (state, fetcher),
         ).fetchall()
     else:
         rows = conn.execute(
             """
             SELECT c.diff_summary FROM changes c
             JOIN sources s ON s.id = c.source_id
-            WHERE s.state = ? AND s.fetcher = 'legiscan' AND c.detected_at > ?
+            WHERE s.state = ? AND s.fetcher = ? AND c.detected_at > ?
             ORDER BY c.detected_at
             """,
-            (state, since),
+            (state, fetcher, since),
         ).fetchall()
 
     bullets = []
     for (diff_summary,) in rows:
         for entry in diff_summary.split("; "):
-            bullets.append(f"- {entry}")
+            bullets.append(f"- [{label}] {entry}")
+    return bullets
+
+
+def _state_section(conn: sqlite3.Connection, state: str, since: str | None) -> str:
+    bullets = []
+    for fetcher, label in LANES:
+        bullets.extend(_lane_bullets(conn, state, fetcher, label, since))
 
     if not bullets:
         return f"## {state}\n_No changes this period._"

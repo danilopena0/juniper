@@ -9,6 +9,7 @@ def check_for_change(
     html: str,
     fetched_at: str,
     raw_path: str,
+    url: str | None = None,
 ) -> bool:
     new_hash = hash_normalized(normalize_html(html))
 
@@ -26,13 +27,14 @@ def check_for_change(
     )
 
     if changed:
+        diff_summary = f"Page content changed — {url}" if url else "content changed"
         conn.execute(
             """
             INSERT INTO changes
                 (source_id, detected_at, prev_hash, new_hash, diff_summary)
             VALUES (?, ?, ?, ?, ?)
             """,
-            (source_id, fetched_at, prev_hash, new_hash, "content changed"),
+            (source_id, fetched_at, prev_hash, new_hash, diff_summary),
         )
 
     conn.commit()
