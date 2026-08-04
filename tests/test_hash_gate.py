@@ -60,3 +60,21 @@ def test_real_change_is_detected(tmp_path):
 
     assert changed is True
     assert conn.execute("SELECT COUNT(*) FROM changes").fetchone()[0] == 2
+
+
+def test_diff_summary_includes_url_when_provided(tmp_path):
+    conn = init_db(tmp_path / "test.db")
+    source_id = _puc_source_id(conn)
+    html = (FIXTURES / "puc_page_v1.html").read_text()
+
+    check_for_change(
+        conn,
+        source_id,
+        html,
+        "2026-08-01T00:00:00",
+        "raw/v1.html",
+        url="https://example.com/news",
+    )
+
+    diff_summary = conn.execute("SELECT diff_summary FROM changes").fetchone()[0]
+    assert "https://example.com/news" in diff_summary

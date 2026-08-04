@@ -98,3 +98,34 @@ def test_change_after_last_render_appears_only_once(tmp_path):
     third_digest = render_digest(conn, STATES, since=since, now="2026-08-22T00:00:00")
     assert "SB45" not in third_digest
     assert "## TX\n_No changes this period._" in third_digest
+
+
+def test_mixed_lanes_both_appear_labeled_under_same_state(tmp_path):
+    conn = init_db(tmp_path / "test.db")
+    _seed(conn, tmp_path)
+    tx_puc_id = get_source_id(
+        conn,
+        state="TX",
+        domain="tariff",
+        fetcher="puc_rss",
+        url="https://puc.texas.gov/agency/resources/pubs/news/",
+    )
+    conn.execute(
+        """
+        INSERT INTO changes (source_id, detected_at, prev_hash, new_hash, diff_summary)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            tx_puc_id,
+            "2026-08-02T00:00:00",
+            "old",
+            "new",
+            "Page content changed — https://puc.texas.gov/agency/resources/pubs/news/",
+        ),
+    )
+    conn.commit()
+
+    digest = render_digest(conn, STATES, since=None, now="2026-08-08T00:00:00")
+
+    assert "- [Legislation] HB1234:" in digest
+    assert "- [PUC Tariff] Page content changed" in digest
