@@ -28,7 +28,7 @@ not LLM extraction. See `CLAUDE.md` for the full spec.
 | 3 | LegiScan client + per-bill change detection, SQLite introduced | Done — PR #2 |
 | 4 | Normalize + hash-gate for HTML sources (PUC RSS) | Done — PR #4 |
 | 5 | `digest.md` renderer v0 (LegiScan lane only) | Done — PR #6 |
-| — | Manual source inventory (real URLs for `puc_rss`/`eei_pdf`/`delta_db`) | Done for GA/AZ/TX/EEI; VA deliberately skipped, OH/DELTa blocked, see below |
+| — | Manual source inventory (real URLs for `puc_rss`/`eei_pdf`/`delta_db`) | Done for GA/AZ/TX/EEI; VA/OH deliberately skipped, DELTa blocked, see below |
 | — | `puc_rss` pipeline wiring (uses Task 4's fetcher/hash-gate) | Not started — GA, AZ, and TX now have real, verified URLs and are `active: true` |
 | — | EEI PDF fetcher | Not started — URL verified live and public, `active: true` |
 | — | DELTa DB fetcher | Not started, blocked — see open risks |
@@ -90,10 +90,14 @@ not LLM extraction. See `CLAUDE.md` for the full spec.
     named-crawler allowlist permitted). Logged to `sources_skipped.md` per
     the politeness rule rather than worked around. No alternative VA source
     found this pass.
-  - **OH (`puc_rss`) — blocked, needs retry.** `puco.ohio.gov` 404s on every
-    path tried (news page, home, root), consistent with WAF blocking
-    non-browser clients. Needs a human to check the site directly and find
-    a working path, if one exists.
+  - **OH (`puc_rss`) — deliberately not configured (2026-08-04 follow-up).**
+    Not a robots.txt issue — `puco.ohio.gov/robots.txt` permits `/news`.
+    The site runs a WAF that 404s our real, descriptive User-Agent on every
+    path while an identical request with a generic browser UA succeeds
+    (confirmed directly). Getting through would mean spoofing a browser UA,
+    which contradicts the project's own politeness principle of honestly
+    identifying the fetcher — chose not to do that. Logged to
+    `sources_skipped.md` alongside VA. No automated alternative found.
   - **DELTa (`delta_db`) — blocked, needs a different approach.**
     `sepapower.org/large-load-tariffs-database/` 403s despite robots.txt
     technically allowing it — looks like Cloudflare-style bot protection
@@ -101,10 +105,16 @@ not LLM extraction. See `CLAUDE.md` for the full spec.
     No hidden JSON/API endpoint found. Options for later: manual periodic
     export instead of automated fetch, or a deeper look at the page's
     network requests to find a non-blocked backing endpoint.
-  - **`puc_rss` is now live for 3 of 5 pilot states** (GA, AZ, TX); VA is
-    deliberately excluded, OH remains blocked. `legiscan` and `eei_pdf` are
-    fully live. `delta_db` remains fully blocked — the `tax_incentive`
-    domain has no working source yet.
+  - **`puc_rss` is now live for 3 of 5 pilot states** (GA, AZ, TX); VA and
+    OH are both deliberately excluded (documented in `sources_skipped.md`).
+    `legiscan` and `eei_pdf` are fully live. `delta_db` remains fully
+    blocked — the `tax_incentive` domain has no working source yet.
+  - **Emerging pattern:** every source we've had to exclude so far (VA,
+    OH, DELTa) was blocked by something *other* than a clear robots.txt
+    rule — either a UA-sniffing WAF or generic bot-protection. Worth
+    remembering that "robots.txt allows it" doesn't guarantee an honest
+    fetcher can actually get in; treat WAF/anti-bot blocks the same as a
+    robots.txt disallow rather than trying to defeat them.
 - **Verification/review-queue layer isn't scheduled into a numbered task
   yet.** It's the actual moat per the strategy doc, but Tasks 1–5 are all
   lane infrastructure + a v0 digest. Keep this visible so scope doesn't
