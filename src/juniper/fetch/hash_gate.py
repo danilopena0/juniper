@@ -3,15 +3,16 @@ import sqlite3
 from juniper.normalize.html import hash_normalized, normalize_html
 
 
-def check_for_change(
+def record_change(
     conn: sqlite3.Connection,
     source_id: int,
-    html: str,
+    normalized: str,
     fetched_at: str,
     raw_path: str,
     url: str | None = None,
+    label: str = "Page",
 ) -> bool:
-    new_hash = hash_normalized(normalize_html(html))
+    new_hash = hash_normalized(normalized)
 
     row = conn.execute(
         "SELECT norm_hash FROM fetches WHERE source_id = ? ORDER BY id DESC LIMIT 1",
@@ -27,7 +28,7 @@ def check_for_change(
     )
 
     if changed:
-        diff_summary = f"Page content changed — {url}" if url else "content changed"
+        diff_summary = f"{label} content changed — {url}" if url else "content changed"
         conn.execute(
             """
             INSERT INTO changes
@@ -39,3 +40,16 @@ def check_for_change(
 
     conn.commit()
     return changed
+
+
+def check_for_change(
+    conn: sqlite3.Connection,
+    source_id: int,
+    html: str,
+    fetched_at: str,
+    raw_path: str,
+    url: str | None = None,
+) -> bool:
+    return record_change(
+        conn, source_id, normalize_html(html), fetched_at, raw_path, url=url
+    )

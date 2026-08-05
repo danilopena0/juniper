@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from juniper.fetch.db import get_source_id, init_db, sync_sources
-from juniper.fetch.hash_gate import check_for_change
+from juniper.fetch.hash_gate import check_for_change, record_change
 from juniper.fetch.sources import load_sources
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -78,3 +78,46 @@ def test_diff_summary_includes_url_when_provided(tmp_path):
 
     diff_summary = conn.execute("SELECT diff_summary FROM changes").fetchone()[0]
     assert "https://example.com/news" in diff_summary
+
+
+def _eei_source_id(conn):
+    sources = load_sources(REPO_ROOT / "sources.yaml")
+    sync_sources(conn, sources)
+    return get_source_id(
+        conn,
+        state=None,
+        domain="tariff",
+        fetcher="eei_pdf",
+        url="https://www.eei.org/-/media/Project/EEI/Documents/"
+        "Issues%20and%20Policy/List%20of%20Large%20Customer%20Projects%20and%20Tariffs",
+    )
+
+
+def test_record_change_works_with_arbitrary_pre_normalized_text(tmp_path):
+    conn = init_db(tmp_path / "test.db")
+    source_id = _eei_source_id(conn)
+
+    changed = record_change(
+        conn,
+        source_id,
+        "already normalized plain text, no html involved",
+        "2026-08-01T00:00:00",
+        "raw/v1.pdf",
+        url="https://example.com/report.pdf",
+        label="Document",
+    )
+
+    assert changed is True
+    diff_summary = conn.execute("SELECT diff_summary FROM changes").fetchone()[0]
+    assert diff_summary == "Document content changed — https://example.com/report.pdf"
+
+    changed_again = record_change(
+        conn,
+        source_id,
+        "already normalized plain text, no html involved",
+        "2026-08-08T00:00:00",
+        "raw/v2.pdf",
+        url="https://example.com/report.pdf",
+        label="Document",
+    )
+    assert changed_again is False
