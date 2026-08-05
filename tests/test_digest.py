@@ -129,3 +129,44 @@ def test_mixed_lanes_both_appear_labeled_under_same_state(tmp_path):
 
     assert "- [Legislation] HB1234:" in digest
     assert "- [PUC Tariff] Page content changed" in digest
+
+
+def test_national_lane_appears_in_own_section(tmp_path):
+    conn = init_db(tmp_path / "test.db")
+    _seed(conn, tmp_path)
+    eei_source_id = get_source_id(
+        conn,
+        state=None,
+        domain="tariff",
+        fetcher="eei_pdf",
+        url="https://www.eei.org/-/media/Project/EEI/Documents/"
+        "Issues%20and%20Policy/List%20of%20Large%20Customer%20Projects%20and%20Tariffs",
+    )
+    conn.execute(
+        """
+        INSERT INTO changes (source_id, detected_at, prev_hash, new_hash, diff_summary)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            eei_source_id,
+            "2026-08-02T00:00:00",
+            "old",
+            "new",
+            "Document content changed — https://www.eei.org/example",
+        ),
+    )
+    conn.commit()
+
+    digest = render_digest(conn, STATES, since=None, now="2026-08-08T00:00:00")
+
+    assert "## National\n- [EEI Large-Load Tariffs] Document content changed" in digest
+    assert digest.index("## National") < digest.index("## TX")
+
+
+def test_national_section_shows_no_changes_when_empty(tmp_path):
+    conn = init_db(tmp_path / "test.db")
+    _seed(conn, tmp_path)
+
+    digest = render_digest(conn, STATES, since=None, now="2026-08-08T00:00:00")
+
+    assert "## National\n_No changes this period._" in digest
