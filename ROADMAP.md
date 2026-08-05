@@ -30,7 +30,7 @@ not LLM extraction. See `CLAUDE.md` for the full spec.
 | 5 | `digest.md` renderer v0 (LegiScan lane only) | Done — PR #6 |
 | — | Manual source inventory (real URLs for `puc_rss`/`eei_pdf`/`delta_db`) | Done for GA/AZ/TX/EEI; VA/OH deliberately skipped, DELTa blocked, see below |
 | — | `puc_rss` pipeline wiring (uses Task 4's fetcher/hash-gate) | Done — PR #11. Live for GA/AZ/TX; digest.md now shows both `legiscan` and `puc_rss` lanes, labeled per state |
-| — | EEI PDF fetcher | Not started — URL verified live and public, `active: true` |
+| — | EEI PDF fetcher | Done — PR #13. Hash-gates only the "LARGE LOAD TARIFFS" section; digest.md now has a National section |
 | — | DELTa DB fetcher | Not started, blocked — see open risks |
 | — | Wire pipeline + digest into `weekly.yml` (still lint/test only) | Not started |
 | — | Extraction (LLM) + `records` table | Not started (later phase) |
@@ -80,6 +80,27 @@ not LLM extraction. See `CLAUDE.md` for the full spec.
   user before doing this, since Task 5 deliberately scoped the digest to
   LegiScan-only — but leaving a live lane's changes unrendered defeats the
   point of wiring it.
+- **EEI PDF hash-gating is scoped to just the "LARGE LOAD TARIFFS"
+  section, not the whole document.** The PDF also has a "Large Load
+  Projects" section (general project announcements) that churns far more
+  often than actual tariff dockets — hashing the whole document would
+  mean "changed" fires on routine project news even when nothing
+  tariff-relevant moved. Located via a text marker; the full PDF is still
+  stored raw regardless. Confirmed with the user before implementing.
+- **`html_fetcher.py`'s robots.txt logic moved into a shared `robots.py`**
+  so the new `pdf_fetcher.py` could reuse it without duplication. Pure
+  refactor, `html_fetcher.py`'s external behavior/tests unchanged.
+- **`hash_gate.py` split into a generic `record_change` core and a thin
+  `check_for_change` HTML-specific wrapper.** PDF-extracted plain text
+  needed hash-gating without going through HTML normalization
+  (`normalize_html` parses with `selectolax`, wrong for non-HTML text).
+  `check_for_change`'s signature/behavior is unchanged for existing
+  callers (`puc_rss_pipeline.py`).
+- **New dependency: `pypdf`** — chosen over `pdfplumber` for text
+  extraction since this task only needed section-based text hashing, not
+  structured table parsing (deferred to the later LLM-extraction phase,
+  same limitation as every other lane so far — a detected change means
+  "the tariff section changed," not "here's what changed").
 
 ## Open questions / risks (not yet decisions)
 - **Repo growth from committing raw JSON weekly.** Fine at current
