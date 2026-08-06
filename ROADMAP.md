@@ -20,6 +20,9 @@ not LLM extraction. See `CLAUDE.md` for the full spec.
 ## Status
 
 `CLAUDE.md`'s first-session task list (1–5) is complete as of PR #6.
+**All 4 pilot lanes now have a working pipeline as of PR #15** —
+`legiscan`, `puc_rss`, `eei_pdf` fetch automatically; `delta_db` is a
+manual drop-in lane. Every lane feeds the digest.
 
 | Task | What | Status |
 |---|---|---|
@@ -31,7 +34,7 @@ not LLM extraction. See `CLAUDE.md` for the full spec.
 | — | Manual source inventory (real URLs for `puc_rss`/`eei_pdf`/`delta_db`) | Done for GA/AZ/TX/EEI; VA/OH deliberately skipped, DELTa blocked, see below |
 | — | `puc_rss` pipeline wiring (uses Task 4's fetcher/hash-gate) | Done — PR #11. Live for GA/AZ/TX; digest.md now shows both `legiscan` and `puc_rss` lanes, labeled per state |
 | — | EEI PDF fetcher | Done — PR #13. Hash-gates only the "LARGE LOAD TARIFFS" section; digest.md now has a National section |
-| — | DELTa DB fetcher | Not started, blocked — see open risks |
+| — | DELTa DB fetcher | Done — PR #15. Manual drop-in lane (`data/manual/delta_db/`), not automated fetch — see decisions log |
 | — | Wire pipeline + digest into `weekly.yml` (still lint/test only) | Not started |
 | — | Extraction (LLM) + `records` table | Not started (later phase) |
 | — | `matrix.md` / `matrix.json` render | Not started (later phase) — the hero asset |
@@ -101,6 +104,22 @@ not LLM extraction. See `CLAUDE.md` for the full spec.
   structured table parsing (deferred to the later LLM-extraction phase,
   same limitation as every other lane so far — a detected change means
   "the tariff section changed," not "here's what changed").
+- **DELTa is a manual drop-in lane, not an automated fetch.** Confirmed
+  via direct investigation: `sepapower.org` returns a genuine Cloudflare
+  JS/Turnstile challenge (`cf-mitigated: challenge` header), not a UA
+  filter — unsolvable without a real browser (out of scope, no
+  Playwright). NCCETC's own writeup on DELTa also confirms the database
+  is distributed via an email-gated download form, updated quarterly, not
+  served as a plain file at all. A human drops the export into
+  `data/manual/delta_db/` by hand; `delta_pipeline.py` hashes whatever's
+  there as opaque bytes and diffs it, same downstream behavior as every
+  other lane. Confirmed this approach with the user before building it.
+- **`hash_gate.py` now has three layers**: `record_hash` (bottom —
+  precomputed hash, pure DB bookkeeping, used by `delta_pipeline.py`),
+  `record_change` (middle — pre-normalized text, used by `eei_pipeline.py`),
+  `check_for_change` (top — HTML-specific, used by `puc_rss_pipeline.py`).
+  Each wraps the one below it; no signature changes for existing callers
+  at any point in this evolution.
 
 ## Open questions / risks (not yet decisions)
 - **Repo growth from committing raw JSON weekly.** Fine at current
@@ -130,23 +149,25 @@ not LLM extraction. See `CLAUDE.md` for the full spec.
     which contradicts the project's own politeness principle of honestly
     identifying the fetcher — chose not to do that. Logged to
     `sources_skipped.md` alongside VA. No automated alternative found.
-  - **DELTa (`delta_db`) — blocked, needs a different approach.**
-    `sepapower.org/large-load-tariffs-database/` 403s despite robots.txt
-    technically allowing it — looks like Cloudflare-style bot protection
-    that a plain polite `httpx` GET won't get past regardless of User-Agent.
-    No hidden JSON/API endpoint found. Options for later: manual periodic
-    export instead of automated fetch, or a deeper look at the page's
-    network requests to find a non-blocked backing endpoint.
-  - **`puc_rss` is now live for 3 of 5 pilot states** (GA, AZ, TX); VA and
-    OH are both deliberately excluded (documented in `sources_skipped.md`).
-    `legiscan` and `eei_pdf` are fully live. `delta_db` remains fully
-    blocked — the `tax_incentive` domain has no working source yet.
-  - **Emerging pattern:** every source we've had to exclude so far (VA,
-    OH, DELTa) was blocked by something *other* than a clear robots.txt
-    rule — either a UA-sniffing WAF or generic bot-protection. Worth
-    remembering that "robots.txt allows it" doesn't guarantee an honest
-    fetcher can actually get in; treat WAF/anti-bot blocks the same as a
-    robots.txt disallow rather than trying to defeat them.
+  - **DELTa (`delta_db`) — resolved via manual drop-in lane (2026-08-06
+    follow-up).** `sepapower.org` sits behind a genuine Cloudflare
+    JS/Turnstile challenge (`cf-mitigated: challenge`), and the database
+    itself is distributed through an email-gated download form, not
+    served as a fetchable file — not something any User-Agent or robots.txt
+    compliance could get around honestly. See decisions log for the
+    manual drop-in lane built instead (`data/manual/delta_db/`).
+  - **`puc_rss` is live for 3 of 5 pilot states** (GA, AZ, TX); VA and OH
+    are both deliberately excluded (documented in `sources_skipped.md`).
+    `legiscan` and `eei_pdf` fetch automatically. `delta_db` is a manual
+    drop-in lane. Every pilot lane now has a working pipeline.
+  - **Emerging pattern:** every source we've had to route around (VA, OH,
+    DELTa) was blocked by something *other* than a clear robots.txt rule —
+    a UA-sniffing WAF, or (for DELTa) a real browser challenge plus an
+    email-gated distribution model. Worth remembering that "robots.txt
+    allows it" doesn't guarantee an honest fetcher can actually get in;
+    treat WAF/anti-bot/challenge blocks the same as a robots.txt disallow
+    rather than trying to defeat them, and watch for sources whose
+    distribution model isn't really "fetch a URL" at all.
 - **Verification/review-queue layer isn't scheduled into a numbered task
   yet.** It's the actual moat per the strategy doc, but Tasks 1–5 are all
   lane infrastructure + a v0 digest. Keep this visible so scope doesn't
