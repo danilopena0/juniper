@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from juniper.fetch.db import get_source_id, init_db, sync_sources
-from juniper.fetch.hash_gate import check_for_change, record_change
+from juniper.fetch.hash_gate import check_for_change, record_change, record_hash
 from juniper.fetch.sources import load_sources
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -119,5 +119,47 @@ def test_record_change_works_with_arbitrary_pre_normalized_text(tmp_path):
         "raw/v2.pdf",
         url="https://example.com/report.pdf",
         label="Document",
+    )
+    assert changed_again is False
+
+
+def _delta_source_id(conn):
+    sources = load_sources(REPO_ROOT / "sources.yaml")
+    sync_sources(conn, sources)
+    return get_source_id(
+        conn,
+        state=None,
+        domain="tax_incentive",
+        fetcher="delta_db",
+        url="https://sepapower.org/large-load-tariffs-database/",
+    )
+
+
+def test_record_hash_works_with_precomputed_hash_no_normalization(tmp_path):
+    conn = init_db(tmp_path / "test.db")
+    source_id = _delta_source_id(conn)
+
+    changed = record_hash(
+        conn,
+        source_id,
+        "deadbeef" * 8,
+        "2026-08-01T00:00:00",
+        "raw/export_v1.csv",
+        url="https://sepapower.org/large-load-tariffs-database/",
+        label="Database",
+    )
+
+    assert changed is True
+    diff_summary = conn.execute("SELECT diff_summary FROM changes").fetchone()[0]
+    assert diff_summary.startswith("Database content changed")
+
+    changed_again = record_hash(
+        conn,
+        source_id,
+        "deadbeef" * 8,
+        "2026-08-08T00:00:00",
+        "raw/export_v1_again.csv",
+        url="https://sepapower.org/large-load-tariffs-database/",
+        label="Database",
     )
     assert changed_again is False
