@@ -71,6 +71,6 @@ sources:
   - state: null
     domain: tax_incentive
     fetcher: delta_db
-    url: null
+    url: https://sepapower.org/large-load-tariffs-database/
     selector: null
-    active: false
+    active: true

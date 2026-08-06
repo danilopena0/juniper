@@ -170,3 +170,33 @@ def test_national_section_shows_no_changes_when_empty(tmp_path):
     digest = render_digest(conn, STATES, since=None, now="2026-08-08T00:00:00")
 
     assert "## National\n_No changes this period._" in digest
+
+
+def test_delta_lane_appears_alongside_eei_in_national_section(tmp_path):
+    conn = init_db(tmp_path / "test.db")
+    _seed(conn, tmp_path)
+    delta_source_id = get_source_id(
+        conn,
+        state=None,
+        domain="tax_incentive",
+        fetcher="delta_db",
+        url="https://sepapower.org/large-load-tariffs-database/",
+    )
+    conn.execute(
+        """
+        INSERT INTO changes (source_id, detected_at, prev_hash, new_hash, diff_summary)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            delta_source_id,
+            "2026-08-02T00:00:00",
+            "old",
+            "new",
+            "Database content changed — https://sepapower.org/large-load-tariffs-database/",
+        ),
+    )
+    conn.commit()
+
+    digest = render_digest(conn, STATES, since=None, now="2026-08-08T00:00:00")
+
+    assert "- [DELTa Tax Incentives] Database content changed" in digest

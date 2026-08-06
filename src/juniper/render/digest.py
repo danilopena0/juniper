@@ -15,7 +15,10 @@ DEFAULT_SOURCES_PATH = Path("sources.yaml")
 DEFAULT_OUTPUT_PATH = Path("digest.md")
 
 LANES = [("legiscan", "Legislation"), ("puc_rss", "PUC Tariff")]
-NATIONAL_LANES = [("eei_pdf", "EEI Large-Load Tariffs")]
+NATIONAL_LANES = [
+    ("eei_pdf", "EEI Large-Load Tariffs"),
+    ("delta_db", "DELTa Tax Incentives"),
+]
 
 
 def _lane_bullets(
