@@ -23,6 +23,11 @@ not LLM extraction. See `CLAUDE.md` for the full spec.
 **All 4 pilot lanes now have a working pipeline as of PR #15** —
 `legiscan`, `puc_rss`, `eei_pdf` fetch automatically; `delta_db` is a
 manual drop-in lane. Every lane feeds the digest.
+**The pipeline is now live on a schedule as of PR #17** — the first real
+automated run happened 2026-08-07 (manually triggered to verify), pulled
+real data from all 4 lanes, and produced the first real `digest.md`. This
+starts the clock on the kill criteria (3 digests reaching the domain-expert
+reviewer).
 
 | Task | What | Status |
 |---|---|---|
@@ -35,7 +40,7 @@ manual drop-in lane. Every lane feeds the digest.
 | — | `puc_rss` pipeline wiring (uses Task 4's fetcher/hash-gate) | Done — PR #11. Live for GA/AZ/TX; digest.md now shows both `legiscan` and `puc_rss` lanes, labeled per state |
 | — | EEI PDF fetcher | Done — PR #13. Hash-gates only the "LARGE LOAD TARIFFS" section; digest.md now has a National section |
 | — | DELTa DB fetcher | Done — PR #15. Manual drop-in lane (`data/manual/delta_db/`), not automated fetch — see decisions log |
-| — | Wire pipeline + digest into `weekly.yml` (still lint/test only) | Not started |
+| — | Wire pipeline + digest into `weekly.yml` | Done — PR #17. Direct bot commit to `main` on change, per CLAUDE.md's architecture |
 | — | Extraction (LLM) + `records` table | Not started (later phase) |
 | — | `matrix.md` / `matrix.json` render | Not started (later phase) — the hero asset |
 | — | Review queue (human verification CLI) | Not started (later phase) |
@@ -120,6 +125,25 @@ manual drop-in lane. Every lane feeds the digest.
   `check_for_change` (top — HTML-specific, used by `puc_rss_pipeline.py`).
   Each wraps the one below it; no signature changes for existing callers
   at any point in this evolution.
+- **`run_weekly.py` reads `LEGISCAN_API_KEY` via `os.environ.get`, not
+  direct indexing** — a missing secret must never crash the whole weekly
+  run. `legiscan_pipeline`'s existing per-state error handling absorbs the
+  resulting auth failures instead. Each of the 4 lane calls is also
+  wrapped in `try/except Exception` at the orchestration level, on top of
+  each lane's own internal degrade-gracefully handling.
+- **`weekly.yml` commits directly to `main`, no PR** — per CLAUDE.md's
+  architecture, this is the audit trail, distinct from how code changes
+  ship (still branch → PR → CI → squash merge).
+- **`legiscan_pipeline`/`digest.py` join/split bills on `"\n"`, not
+  `"; "`.** Found via the first real weekly run: LegiScan bill titles can
+  legitimately contain `"; "` (AZ HB2032's real title is `"Statewide
+  assessment; testing window; revisions"`), which collided with the old
+  separator and shredded that bill's title into multiple fake digest
+  bullets. Newlines aren't a title character LegiScan uses. Already-
+  committed `changes` rows using the old format render as one long bullet
+  per state instead of splitting per-bill — not corrupted, just not
+  split; historical audit-trail data isn't rewritten, only future runs
+  use the fixed format.
 
 ## Open questions / risks (not yet decisions)
 - **Repo growth from committing raw JSON weekly.** Fine at current
@@ -173,6 +197,24 @@ manual drop-in lane. Every lane feeds the digest.
   lane infrastructure + a v0 digest. Keep this visible so scope doesn't
   drift into "add more lanes" before matrix + extraction + review queue
   exist (later phase work).
+- **LegiScan keyword breadth is genuinely noisy, confirmed by the first
+  real run (2026-08-07).** TX alone matched ~900 lines of bills, many
+  clearly unrelated to data centers (maternal mortality registries,
+  license plate readers, animal health commission restructuring). This
+  is LegiScan's search casting a wide net on terms like "digital
+  infrastructure" and "data center" — expected per the original plan
+  ("start broad, let the friend's relevance feedback narrow it"), not a
+  bug. Not tuned yet — deliberately left for the domain-expert reviewer's
+  feedback on the actual digest rather than guessed at.
+- **GitHub Actions occasionally fails to dispatch a run for a fresh
+  branch push** (observed twice: PR #17's branch never got a run in 40+
+  min despite `total_count: 0` on the API; PR #18's branch also showed no
+  runs via `gh pr checks` even though `gh api .../actions/runs` later
+  showed both had actually run and passed). Root cause unconfirmed —
+  possibly a `gh` CLI/API sync delay rather than Actions itself not
+  triggering. Workaround so far: check the runs API directly
+  (`gh api repos/.../actions/runs?branch=<branch>`) rather than trusting
+  `gh pr checks` alone if it reports nothing after a few minutes.
 
 ## Workflow notes
 - Every change ships on a feature branch → PR → CI → squash merge into
