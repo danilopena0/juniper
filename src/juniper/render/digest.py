@@ -47,7 +47,7 @@ def _lane_bullets(
 
     bullets = []
     for (diff_summary,) in rows:
-        for entry in diff_summary.split("; "):
+        for entry in diff_summary.split("\n"):
             bullets.append(f"- [{label}] {entry}")
     return bullets
 
@@ -88,7 +88,7 @@ def _national_bullets(
 
     bullets = []
     for (diff_summary,) in rows:
-        for entry in diff_summary.split("; "):
+        for entry in diff_summary.split("\n"):
             bullets.append(f"- [{label}] {entry}")
     return bullets
 

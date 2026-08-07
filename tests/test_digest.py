@@ -200,3 +200,36 @@ def test_delta_lane_appears_alongside_eei_in_national_section(tmp_path):
     digest = render_digest(conn, STATES, since=None, now="2026-08-08T00:00:00")
 
     assert "- [DELTa Tax Incentives] Database content changed" in digest
+
+
+def test_bill_title_with_semicolons_renders_as_one_bullet(tmp_path):
+    conn = init_db(tmp_path / "test.db")
+    sources = load_sources(REPO_ROOT / "sources.yaml")
+    sync_sources(conn, sources)
+    tx_source_id = get_source_id(
+        conn, state="TX", domain="legislation", fetcher="legiscan", url="https://api.legiscan.com/"
+    )
+    conn.execute(
+        """
+        INSERT INTO changes (source_id, detected_at, prev_hash, new_hash, diff_summary)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            tx_source_id,
+            "2026-08-01T00:00:00",
+            "old",
+            "new",
+            "HB2032: Statewide assessment; testing window; revisions — "
+            "https://legiscan.com/TX/bill/HB2032/2026\n"
+            "SB45: Relating to large loads. — https://legiscan.com/TX/bill/SB45/2026",
+        ),
+    )
+    conn.commit()
+
+    digest = render_digest(conn, STATES, since=None, now="2026-08-08T00:00:00")
+
+    assert (
+        "- [Legislation] HB2032: Statewide assessment; testing window; "
+        "revisions — https://legiscan.com/TX/bill/HB2032/2026" in digest
+    )
+    assert "- [Legislation] SB45: Relating to large loads." in digest
