@@ -16,7 +16,11 @@ DEFAULT_RAW_DIR = Path("data/raw/delta_db")
 
 def _latest_manual_file(manual_dir: Path) -> Path | None:
     candidates = [
-        p for p in manual_dir.iterdir() if p.is_file() and not p.name.startswith(".")
+        p
+        for p in manual_dir.iterdir()
+        if p.is_file()
+        and not p.name.startswith(".")
+        and not p.name.lower().startswith("readme")
     ]
     if not candidates:
         return None

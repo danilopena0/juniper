@@ -111,3 +111,22 @@ def test_missing_manual_dir_degrades_gracefully(tmp_path):
 
     conn = sqlite3.connect(db_path)
     assert conn.execute("SELECT COUNT(*) FROM changes").fetchone()[0] == 0
+
+
+def test_readme_in_manual_dir_is_not_treated_as_an_export(tmp_path):
+    db_path = tmp_path / "juniper.db"
+    manual_dir = tmp_path / "manual"
+    raw_dir = tmp_path / "raw"
+    manual_dir.mkdir()
+    (manual_dir / "README.md").write_text("drop your export file here")
+
+    run(
+        db_path=db_path,
+        sources_path=REPO_ROOT / "sources.yaml",
+        manual_dir=manual_dir,
+        raw_dir=raw_dir,
+    )
+
+    conn = sqlite3.connect(db_path)
+    assert conn.execute("SELECT COUNT(*) FROM changes").fetchone()[0] == 0
+    assert conn.execute("SELECT COUNT(*) FROM fetches").fetchone()[0] == 0
