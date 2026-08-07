@@ -99,7 +99,10 @@ def _process_state(
 
     if changed:
         entries = sorted(changed, key=lambda bill: bill.bill_number)
-        diff_summary = "; ".join(
+        # Bill titles can legitimately contain "; " (e.g. "Statewide assessment;
+        # testing window; revisions"), so join on newlines instead -- a separator
+        # LegiScan titles won't naturally contain, unlike "; ".
+        diff_summary = "\n".join(
             f"{bill.bill_number}: {bill.title} — {bill.url}" for bill in entries
         )
         conn.execute(

@@ -77,3 +77,24 @@ def test_second_run_only_records_changed_bill(tmp_path):
     second_diff_summary = changes[1][0]
     assert second_diff_summary.startswith("SB45: ")
     assert "HB1234" not in second_diff_summary
+
+
+def test_bill_title_containing_semicolons_is_not_split(tmp_path):
+    db_path = tmp_path / "juniper.db"
+    raw_dir = tmp_path / "raw"
+
+    run(
+        db_path=db_path,
+        sources_path=REPO_ROOT / "sources.yaml",
+        raw_dir=raw_dir,
+        api_key="test-key",
+        search_fn=_fake_search("legiscan_search_tx_semicolon_title.json"),
+    )
+
+    import sqlite3
+
+    conn = sqlite3.connect(db_path)
+    diff_summary = conn.execute("SELECT diff_summary FROM changes").fetchone()[0]
+    entries = diff_summary.split("\n")
+    assert len(entries) == 2
+    assert "HB2032: Statewide assessment; testing window; revisions — " in diff_summary

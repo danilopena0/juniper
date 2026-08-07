@@ -1,0 +1,44 @@
+{
+  "status": "OK",
+  "searchresult": {
+    "summary": {
+      "page": "1 of 1",
+      "range": "1-2",
+      "relevancy": "100% to 87%",
+      "count": 2,
+      "page_current": 1,
+      "page_total": 1,
+      "query": "data center"
+    },
+    "0": {
+      "relevance": 100,
+      "state": "TX",
+      "bill_number": "HB2032",
+      "bill_id": 2032001,
+      "change_hash": "cccc4444",
+      "status": 1,
+      "last_action_date": "2026-01-15",
+      "last_action": "Referred to committee",
+      "title": "Statewide assessment; testing window; revisions",
+      "text_date": "2026-01-10",
+      "text_url": "https://legiscan.com/TX/text/HB2032/2026",
+      "research_url": "https://legiscan.com/TX/research/HB2032/2026",
+      "url": "https://legiscan.com/TX/bill/HB2032/2026"
+    },
+    "1": {
+      "relevance": 87,
+      "state": "TX",
+      "bill_number": "SB45",
+      "bill_id": 7654321,
+      "change_hash": "bbbb2222",
+      "status": 1,
+      "last_action_date": "2026-01-12",
+      "last_action": "Filed",
+      "title": "Relating to large load interconnection standards.",
+      "text_date": "2026-01-05",
+      "text_url": "https://legiscan.com/TX/text/SB45/2026",
+      "research_url": "https://legiscan.com/TX/research/SB45/2026",
+      "url": "https://legiscan.com/TX/bill/SB45/2026"
+    }
+  }
+}
