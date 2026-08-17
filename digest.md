@@ -1,10 +1,10 @@
-# RegTracker Digest — 2026-08-10
+# RegTracker Digest — 2026-08-17
 
 ## National
-_No changes this period._
+- [EEI Large-Load Tariffs] Document content changed — https://www.eei.org/-/media/Project/EEI/Documents/Issues%20and%20Policy/List%20of%20Large%20Customer%20Projects%20and%20Tariffs
 
 ## AZ
-_No changes this period._
+- [PUC Tariff] Page content changed — https://azcc.gov/news
 
 ## GA
 _No changes this period._
