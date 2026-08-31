@@ -1,4 +1,4 @@
-# RegTracker Digest — 2026-08-24
+# RegTracker Digest — 2026-08-31
 
 ## National
 _No changes this period._
@@ -13,7 +13,7 @@ _No changes this period._
 _No changes this period._
 
 ## TX
-- [PUC Tariff] Page content changed — https://puc.texas.gov/agency/resources/pubs/news/
+_No changes this period._
 
 ## VA
 _No changes this period._
