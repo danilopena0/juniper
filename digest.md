@@ -1,19 +1,20 @@
-# RegTracker Digest — 2026-10-26
+# RegTracker Digest — 2026-11-02
 
 ## National
-- [EEI Large-Load Tariffs] Document content changed — https://www.eei.org/-/media/Project/EEI/Documents/Issues%20and%20Policy/List%20of%20Large%20Customer%20Projects%20and%20Tariffs
+_No changes this period._
 
 ## AZ
-_No changes this period._
+- [PUC Tariff] Page content changed — https://azcc.gov/news
 
 ## GA
 _No changes this period._
 
 ## OH
-_No changes this period._
+- [Legislation] HB1029: Enact the Take the Dough, We Gotta Know Act — https://legiscan.com/OH/bill/HB1029/2025
+- [Legislation] HB1034: Authorize operation of autonomous vehicles on public roads — https://legiscan.com/OH/bill/HB1034/2025
 
 ## TX
-_No changes this period._
+- [PUC Tariff] Page content changed — https://puc.texas.gov/agency/resources/pubs/news/
 
 ## VA
 _No changes this period._
