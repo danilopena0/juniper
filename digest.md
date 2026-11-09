@@ -1,4 +1,4 @@
-# RegTracker Digest — 2026-11-02
+# RegTracker Digest — 2026-11-09
 
 ## National
 _No changes this period._
@@ -10,11 +10,10 @@ _No changes this period._
 _No changes this period._
 
 ## OH
-- [Legislation] HB1029: Enact the Take the Dough, We Gotta Know Act — https://legiscan.com/OH/bill/HB1029/2025
-- [Legislation] HB1034: Authorize operation of autonomous vehicles on public roads — https://legiscan.com/OH/bill/HB1034/2025
+_No changes this period._
 
 ## TX
-- [PUC Tariff] Page content changed — https://puc.texas.gov/agency/resources/pubs/news/
+_No changes this period._
 
 ## VA
-_No changes this period._
+- [Legislation] SB850: Data centers, large; moratorium, approval requirements, utility independent classifications, report. — https://legiscan.com/VA/bill/SB850/2027
